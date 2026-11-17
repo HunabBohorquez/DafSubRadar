@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SubRadar — Radar Inteligente de Suscripciones y Gastos Hormiga</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <div class="brand">
+        <span class="brand__radar" aria-hidden="true"></span>
+        <div>
+          <h1 class="brand__title">SubRadar</h1>
+          <p class="brand__subtitle">Radar Inteligente de Suscripciones y Gastos Hormiga</p>
+        </div>
+      </div>
+
+      <div class="topbar__actions">
+        <button type="button" id="btnLoadDemo" class="btn btn--secondary">
+          Cargar Datos Demo
+        </button>
+        <button type="button" id="btnExportJson" class="btn btn--ghost">
+          Exportar JSON
+        </button>
+        <button type="button" id="btnNewSub" class="btn btn--primary">
+          + Nueva Suscripción
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-layout">
+    <!-- Normalizador de Impacto Financiero -->
+    <section class="kpi-grid" aria-label="Normalizador de Impacto Financiero">
+      <article class="kpi-card">
+        <span class="kpi-card__label">Gasto Diario Equivalente</span>
+        <strong class="kpi-card__value" id="kpiDaily">$0.00</strong>
+        <span class="kpi-card__hint">Proyección anual ÷ 365 días</span>
+      </article>
+
+      <article class="kpi-card">
+        <span class="kpi-card__label">Gasto Mensual Equivalente</span>
+        <strong class="kpi-card__value" id="kpiMonthly">$0.00</strong>
+        <span class="kpi-card__hint">Proyección anual ÷ 12 meses</span>
+      </article>
+
+      <article class="kpi-card kpi-card--accent">
+        <span class="kpi-card__label">Proyección de Gasto Anual Total</span>
+        <strong class="kpi-card__value" id="kpiAnnual">$0.00</strong>
+        <span class="kpi-card__hint" id="kpiCount">0 suscripciones activas</span>
+      </article>
+    </section>
+
+    <!-- Simulador "¿Cuánto ahorro si cancelo?" -->
+    <section id="simulatorBanner" class="simulator-banner hidden" aria-live="polite">
+      <div class="simulator-banner__info">
+        <span class="simulator-banner__badge">Simulador de Baja Activo</span>
+        <p id="simulatorSummaryText">
+          Has seleccionado 0 servicios para simular su cancelación.
+        </p>
+      </div>
+      <div class="simulator-banner__metrics">
+        <div class="sim-metric">
+          <span>Ahorro Mensual</span>
+          <strong id="simMonthlySavings">$0.00</strong>
+        </div>
+        <div class="sim-metric">
+          <span>Ahorro Anual Liberado</span>
+          <strong id="simAnnualSavings">$0.00</strong>
+        </div>
+        <button type="button" id="btnClearSim" class="btn btn--ghost btn--sm">
+          Limpiar selección
+        </button>
+      </div>
+    </section>
+
+    <!-- Navegación por Pestañas -->
+    <nav class="tabs" aria-label="Secciones principales">
+      <button type="button" class="tab-btn active" data-tab="dashboard">
+        Catálogo y Distribución
+      </button>
+      <button type="button" class="tab-btn" data-tab="csv-detector">
+        Detector Local en CSV <span class="badge-private">100% Local</span>
+      </button>
+    </nav>
+
+    <!-- Vista 1: Catálogo + Gráfico Canvas -->
+    <section id="tab-dashboard" class="tab-panel active">
+      <div class="dashboard-grid">
+        <!-- Columna Izquierda: Lista de Suscripciones -->
+        <div class="catalog-column">
+          <div class="section-header">
+            <h2>Suscripciones Registradas</h2>
+            <div class="filters">
+              <label for="filterCategory" class="sr-only">Filtrar por categoría</label>
+              <select id="filterCategory" class="select-input">
+                <option value="ALL">Todas las categorías</option>
+                <option value="Streaming">Streaming</option>
+                <option value="Software/Nube">Software/Nube</option>
+                <option value="Salud/Gimnasio">Salud/Gimnasio</option>
+                <option value="Servicios">Servicios</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="subscriptionsList" class="subs-grid"></div>
+        </div>
+
+        <!-- Columna Derecha: Visualización Nativa en Canvas -->
+        <aside class="chart-column">
+          <div class="card chart-card">
+            <div class="chart-card__header">
+              <h2>Gasto Anual por Categoría</h2>
+              <p>Distribución proporcional normalizada a 12 meses</p>
+            </div>
+            <div class="canvas-wrapper">
+              <canvas id="categoryChartCanvas" width="360" height="360"></canvas>
+            </div>
+            <ul id="chartLegend" class="chart-legend"></ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Vista 2: Detector Local de Recurrencias en CSV -->
+    <section id="tab-csv-detector" class="tab-panel">
+      <div class="card csv-panel">
+        <div class="csv-panel__header">
+          <div>
+            <h2>Detector Local de Recurrencias en Estado de Cuenta (CSV)</h2>
+            <p>
+              Tus datos bancarios nunca salen de tu navegador. Analiza movimientos con columnas
+              <code>fecha,comercio,monto</code> para detectar cargos periódicos y subidas de tarifa.
+            </p>
+          </div>
+          <div class="csv-panel__actions">
+            <button type="button" id="btnLoadSyntheticCsv" class="btn btn--secondary">
+              Cargar CSV Sintético de Prueba
+            </button>
+            <label for="csvFileInput" class="btn btn--primary file-label">
+              Subir archivo .CSV
+              <input type="file" id="csvFileInput" accept=".csv,text/csv" />
+            </label>
+          </div>
+        </div>
+
+        <div id="csvStatusBox" class="csv-status">
+          Selecciona un archivo <strong>.csv</strong> o haz clic en <strong>"Cargar CSV Sintético de Prueba"</strong> para ejecutar el análisis local.
+        </div>
+
+        <div id="csvResultsContainer" class="csv-results-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal CRUD Agregar / Editar Suscripción -->
+  <div id="subModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <div class="modal-card__header">
+        <h2 id="modalTitle">Nueva Suscripción</h2>
+        <button type="button" id="btnCloseModal" class="icon-btn" aria-label="Cerrar ventana">&times;</button>
+      </div>
+
+      <form id="subForm" class="sub-form">
+        <input type="hidden" id="subId" />
+
+        <div class="form-group">
+          <label for="subName">Nombre del servicio</label>
+          <input type="text" id="subName" placeholder="Ej. Netflix, Gimnasio, iCloud+" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="subCategory">Categoría</label>
+            <select id="subCategory" required>
+              <option value="Streaming">Streaming</option>
+              <option value="Software/Nube">Software/Nube</option>
+              <option value="Salud/Gimnasio">Salud/Gimnasio</option>
+              <option value="Servicios">Servicios</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="subAmount">Monto ($)</label>
+            <input type="number" id="subAmount" step="0.01" min="0.01" placeholder="0.00" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="subPeriodicity">Periodicidad</label>
+            <select id="subPeriodicity" required>
+              <option value="Semanal">Semanal (×52/año)</option>
+              <option value="Mensual" selected>Mensual (×12/año)</option>
+              <option value="Bimestral">Bimestral (×6/año)</option>
+              <option value="Anual">Anual (×1/año)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="subNextDate">Próxima fecha de cobro</label>
+            <input type="date" id="subNextDate" required />
+          </div>
+        </div>
+
+        <div class="modal-card__footer">
+          <button type="button" id="btnCancelForm" class="btn btn--ghost">Cancelar</button>
+          <button type="submit" class="btn btn--primary">Guardar Suscripción</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast de Notificación -->
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
